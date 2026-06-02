@@ -235,8 +235,8 @@ backend/
 
 | Fase | Estado |
 |------|--------|
-| 0 — Proyecto base | ⬜ Pendiente |
-| 1 — Autenticación | ⬜ Pendiente |
+| 0 — Proyecto base | ✔ Pendiente |
+| 1 — Autenticación | ✔ Pendiente |
 | 2 — Artículos | ⬜ Pendiente |
 | 3 — Fotos | ⬜ Pendiente |
 | 4 — Categorías y marcas | ⬜ Pendiente |
