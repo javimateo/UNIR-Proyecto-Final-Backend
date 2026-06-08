@@ -1,6 +1,6 @@
 function errorMiddleware(err, req, res, next) {
   const status = err.status || 500;
-  const message = err.message || 'Internal server error';
+  const message = err.message || 'Error interno del servidor';
 
   if (process.env.NODE_ENV !== 'production') {
     console.error(err);
