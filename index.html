@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Web de TVs - Panel de Imágenes</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f4f7f6; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #0056b3; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #bd2130; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 8px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; }
+        .preview-box { text-align: center; display: none; }
+        .preview-img { max-width: 100%; max-height: 250px; border-radius: 6px; margin-top: 10px; border: 2px dashed #ccc; }
+    </style>
+</head>
+<body>
+
+    <h2>📺 Gestión de Imágenes (Compra-Venta de TVs)</h2>
+    <p>Usa este panel interactivo para verificar tus endpoints de la tarjeta de control.</p>
+
+    <div class="card">
+        <h3>✅ Probar: POST /api/uploads</h3>
+        <form id="uploadForm">
+            <label for="anuncioId"><strong>ID del Anuncio (Prueba con: tv-lg-4k)</strong></label>
+            <input type="text" id="anuncioId" value="tv-lg-4k" required>
+
+            <label for="fileInput"><strong>Foto de la TV (Máx 2MB):</strong></label>
+            <input type="file" id="fileInput" accept="image/*" required>
+
+            <button type="submit" class="btn">Subir al Catálogo</button>
+        </form>
+    </div>
+
+    <div class="card preview-box" id="resultCard">
+        <h3>🗑️ Probar: DELETE /api/uploads/:id</h3>
+        <p><strong>ID generado por el Servidor:</strong> <span id="imgId" style="color:#007bff; font-family:monospace;"></span></p>
+        <img id="imgPreview" class="preview-img" src="" alt="Vista previa de la TV">
+        <br><br>
+        <button id="deleteBtn" class="btn btn-danger">Eliminar de forma Segura</button>
+    </div>
+
+    <script>
+        let uuidImagenActual = '';
+
+        // ESCUCHAR SUBIDA (POST)
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('fileInput').files[0];
+            const anuncioId = document.getElementById('anuncioId').value;
+
+            // Preparar el multipart/form-data
+            const formData = new FormData();
+            formData.append('imagen', file);
+            formData.append('anuncioId', anuncioId);
+
+            try {
+                const response = await fetch('/api/uploads', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.mensaje);
+                    uuidImagenActual = data.imagen.id;
+                    
+                    // Mostrar datos en la tarjeta de borrado
+                    document.getElementById('imgId').textContent = uuidImagenActual;
+                    document.getElementById('imgPreview').src = data.imagen.url;
+                    document.getElementById('resultCard').style.display = 'block';
+                } else {
+                    alert('Error del Servidor: ' + data.error);
+                }
+            } catch (error) {
+                alert('No se pudo conectar con el Backend.');
+            }
+        });
+
+        // ESCUCHAR BORRADO (DELETE)
+        document.getElementById('deleteBtn').addEventListener('click', async () => {
+            if (!uuidImagenActual) return;
+
+            try {
+                const response = await fetch(`/api/uploads/${uuidImagenActual}`, { method: 'DELETE' });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.mensaje);
+                    // Ocultar panel y resetear
+                    document.getElementById('resultCard').style.display = 'none';
+                    document.getElementById('uploadForm').reset();
+                } else {
+                    alert('Error al borrar: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error en la petición de borrado.');
+            }
+        });
+    </script>
+</body>
+</html>
