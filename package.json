@@ -1,7 +1,7 @@
 {
-  "name": "backend-tv-imagenes",
+  "name": "tv-marketplace-backend",
   "version": "1.0.0",
-  "description": "Gestión de imágenes para compra-venta de TVs",
+  "description": "Backend modular para gestión de imágenes y mensajería de TVs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
