@@ -1,13 +1,30 @@
+@TOKEN = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbCI6InJlZ3VsYXIiLCJpYXQiOjE3MjAwMDAwMDB9.xxxxx
 
+
+
+
+
+
+////////////////////////---GETS---///////////////////////////////////
 #### Listar categorías
 GET http://localhost:3000/api/categories
 
+
 ### Listar favoritos
-
 GET http://localhost:3000/api/favorites
+Authorization: Bearer {{TOKEN}}
+
+
+### Listar items con búsqueda y filtros
+GET http://localhost:3000/api/items?search=Samsung&category=1&priceMin=100&priceMax=500&sort=price_asc&page=1&limit=10
+Authorization: Bearer {{TOKEN}}
+
+### Obtener item por ID
+GET http://localhost:3000/api/items/1
 
 
 
+////////////////////////---POSTS----///////////////////////////////////
 
 
 ### Crear categoría
@@ -18,9 +35,11 @@ Content-Type: application/json
   "name": "Pantallas SuperGigantes (86\" - 95\")"
 }
 
-### Guardar favorito
 
+
+### Guardar favorito
 POST http://localhost:3000/api/favorites
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
 {
@@ -28,19 +47,75 @@ Content-Type: application/json
 }
 
 
-### 
+### Crear item
+POST http://localhost:3000/api/items
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+  "category_id": 1,
+  "brand_id": 1,
+  "title": "Samsung TV 32 pulgadas",
+  "model": "UE32T4305",
+  "description": "TV LED de buena calidad",
+  "specs": {
+    "resolucion": "FHD 1080p",
+    "hdmi": 2,
+    "panel": "LED"
+  },
+  "price": 250.00,
+  "item_condition": "like_new"
+}
+
+
+
+
+
+////////////////////////---PUTS----///////////////////////////////////////
+
+
+
+### Actualizar item
+PUT http://localhost:3000/api/items/1
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+  "title": "Samsung TV 32 pulgadas (nuevo precio)",
+  "price": 199.99,
+  "item_condition": "good",
+  "status": "published"
+}
+
+
+
+### Actualizar categoría
 PUT http://localhost:3000/api/categories/5
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
 {
   "name": "Pantallas SuperGigantes (86\" - 100\")"
 }
 
-### 
+
+
+
+
+/////////////////////////---DELETES--///////////////////////////////////////////
+
+
+### Eliminar categoría
 DELETE http://localhost:3000/api/categories/5
+Authorization: Bearer {{TOKEN}}
 
-### Quitar favorito
-
+### Eliminar favorito
 DELETE http://localhost:3000/api/favorites/5
+Authorization: Bearer {{TOKEN}}
+
+### Eliminar item
+DELETE http://localhost:3000/api/items/1
+Authorization: Bearer {{TOKEN}}
+
 
 
