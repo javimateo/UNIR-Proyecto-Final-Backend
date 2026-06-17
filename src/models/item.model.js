@@ -7,14 +7,12 @@ async function findAll({ category, brand, minPrice, maxPrice, condition, status,
   if (userId) {
     conditions.push('i.user_id = ?');
     params.push(userId);
+    if (status) {
+      conditions.push('i.status = ?');
+      params.push(status);
+    }
   } else {
     conditions.push("i.status = 'published'");
-  }
-
-  if (status && userId) {
-    conditions.splice(conditions.indexOf("i.status = 'published'"), 1);
-    conditions.push('i.status = ?');
-    params.push(status);
   }
 
   if (category) { conditions.push('c.slug = ?');        params.push(category); }
