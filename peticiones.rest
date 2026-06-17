@@ -1,0 +1,46 @@
+
+#### Listar categorías
+GET http://localhost:3000/api/categories
+
+### Listar favoritos
+
+GET http://localhost:3000/api/favorites
+
+
+
+
+
+### Crear categoría
+POST http://localhost:3000/api/categories
+Content-Type: application/json
+
+{
+  "name": "Pantallas SuperGigantes (86\" - 95\")"
+}
+
+### Guardar favorito
+
+POST http://localhost:3000/api/favorites
+Content-Type: application/json
+
+{
+  "item_id": 5
+}
+
+
+### 
+PUT http://localhost:3000/api/categories/5
+Content-Type: application/json
+
+{
+  "name": "Pantallas SuperGigantes (86\" - 100\")"
+}
+
+### 
+DELETE http://localhost:3000/api/categories/5
+
+### Quitar favorito
+
+DELETE http://localhost:3000/api/favorites/5
+
+

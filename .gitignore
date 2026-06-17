@@ -4,3 +4,7 @@ dist/
 *.log
 .DS_Store
 CLAUDE.md
+
+db/BBDD.sql
+
+.env.example
