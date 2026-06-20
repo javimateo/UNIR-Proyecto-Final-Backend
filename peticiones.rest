@@ -1,34 +1,57 @@
-@TOKEN = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbCI6InJlZ3VsYXIiLCJpYXQiOjE3MjAwMDAwMDB9.xxxxx
+@BASE_URL = http://localhost:3000/api
+@TOKEN = 
+
+########################---AUTH---###############################
+
+### PRIMERO: Registrate (solo la primera vez)
+POST {{BASE_URL}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### SEGUNDO: Inicia sesión para obtener token (hacer esto siempre que el token expire)
+# El token aparecerá en la respuesta - cópialo y pégalo en la línea: @TOKEN = <token_aqui>
+POST {{BASE_URL}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123"
+}
+
+### Ver token actual
+GET {{BASE_URL}}/auth/me
+Authorization: Bearer {{TOKEN}}
 
 
+########################---GETS---###############################
 
-
-
-
-////////////////////////---GETS---///////////////////////////////////
 #### Listar categorías
-GET http://localhost:3000/api/categories
+GET {{BASE_URL}}/categories
 
 
 ### Listar favoritos
-GET http://localhost:3000/api/favorites
+GET {{BASE_URL}}/favorites
 Authorization: Bearer {{TOKEN}}
 
 
 ### Listar items con búsqueda y filtros
-GET http://localhost:3000/api/items?search=Samsung&category=1&priceMin=100&priceMax=500&sort=price_asc&page=1&limit=10
+GET {{BASE_URL}}/items?search=Samsung&category=1&priceMin=100&priceMax=500&sort=price_asc&page=1&limit=10
 Authorization: Bearer {{TOKEN}}
 
 ### Obtener item por ID
-GET http://localhost:3000/api/items/1
+GET {{BASE_URL}}/items/1
 
 
 
-////////////////////////---POSTS----///////////////////////////////////
-
+########################---POSTS---###############################
 
 ### Crear categoría
-POST http://localhost:3000/api/categories
+POST {{BASE_URL}}/categories
 Content-Type: application/json
 
 {
@@ -38,7 +61,7 @@ Content-Type: application/json
 
 
 ### Guardar favorito
-POST http://localhost:3000/api/favorites
+POST {{BASE_URL}}/favorites
 Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
@@ -48,7 +71,7 @@ Content-Type: application/json
 
 
 ### Crear item
-POST http://localhost:3000/api/items
+POST {{BASE_URL}}/items
 Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
@@ -71,12 +94,10 @@ Content-Type: application/json
 
 
 
-////////////////////////---PUTS----///////////////////////////////////////
-
-
+########################---PUTS---###############################
 
 ### Actualizar item
-PUT http://localhost:3000/api/items/1
+PUT {{BASE_URL}}/items/1
 Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
@@ -90,7 +111,7 @@ Content-Type: application/json
 
 
 ### Actualizar categoría
-PUT http://localhost:3000/api/categories/5
+PUT {{BASE_URL}}/categories/5
 Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
@@ -102,20 +123,16 @@ Content-Type: application/json
 
 
 
-/////////////////////////---DELETES--///////////////////////////////////////////
-
+########################---DELETES---###############################
 
 ### Eliminar categoría
-DELETE http://localhost:3000/api/categories/5
+DELETE {{BASE_URL}}/categories/5
 Authorization: Bearer {{TOKEN}}
 
 ### Eliminar favorito
-DELETE http://localhost:3000/api/favorites/5
+DELETE {{BASE_URL}}/favorites/5
 Authorization: Bearer {{TOKEN}}
 
 ### Eliminar item
-DELETE http://localhost:3000/api/items/1
+DELETE {{BASE_URL}}/items/1
 Authorization: Bearer {{TOKEN}}
-
-
-

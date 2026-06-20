@@ -2,14 +2,14 @@ const pool = require('../config/db');
 
 async function findAll() {
   const [rows] = await pool.query(
-    'SELECT id_categoria AS id, nombre_categoria AS name FROM category ORDER BY nombre_categoria'
+    'SELECT id, name FROM categories ORDER BY name'
   );
   return rows;
 }
 
 async function findById(id) {
   const [rows] = await pool.query(
-    'SELECT id_categoria AS id, nombre_categoria AS name FROM category WHERE id_categoria = ? LIMIT 1',
+    'SELECT id, name FROM categories WHERE id = ? LIMIT 1',
     [id]
   );
   return rows[0] || null;
@@ -17,15 +17,15 @@ async function findById(id) {
 
 async function create({ name }) {
   const [result] = await pool.query(
-    'INSERT INTO category (nombre_categoria) VALUES (?)',
-    [name]
+    'INSERT INTO categories (name, slug) VALUES (?, ?)',
+    [name, name.toLowerCase().replace(/\s+/g, '-')]
   );
   return result.insertId;
 }
 
 async function update(id, { name }) {
   const [result] = await pool.query(
-    'UPDATE category SET nombre_categoria = ? WHERE id_categoria = ?',
+    'UPDATE categories SET name = ? WHERE id = ?',
     [name, id]
   );
   return result.affectedRows > 0;
@@ -33,7 +33,7 @@ async function update(id, { name }) {
 
 async function remove(id) {
   const [result] = await pool.query(
-    'DELETE FROM category WHERE id_categoria = ?',
+    'DELETE FROM categories WHERE id = ?',
     [id]
   );
   return result.affectedRows > 0;
