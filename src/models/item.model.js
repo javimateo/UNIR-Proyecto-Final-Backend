@@ -1,139 +1,112 @@
 const pool = require('../config/db');
 
-async function findAll(filters = {}) {
-  const { search, category, priceMin, priceMax, sort, page = 1, limit = 10 } = filters;
-  
-  let query = `
-    SELECT i.id, i.title, i.model, i.description, i.price, i.item_condition, 
-           i.status, i.created_at, i.category_id, i.brand_id, c.nombre_categoria, b.nombre_marca
-    FROM items i
-    LEFT JOIN category c ON i.category_id = c.id_categoria
-    LEFT JOIN brand b ON i.brand_id = b.id_marca
-    WHERE i.status = 'published'
-  `;
-  
+async function findAll({ category, brand, minPrice, maxPrice, condition, status, search, userId } = {}) {
+  const conditions = [];
   const params = [];
 
-  if (search) {
-    query += ` AND (i.title LIKE ? OR i.description LIKE ?)`;
-    const searchTerm = `%${search}%`;
-    params.push(searchTerm, searchTerm);
-  }
-
-  if (category) {
-    query += ` AND i.category_id = ?`;
-    params.push(category);
-  }
-
-  if (priceMin) {
-    query += ` AND i.price >= ?`;
-    params.push(priceMin);
-  }
-
-  if (priceMax) {
-    query += ` AND i.price <= ?`;
-    params.push(priceMax);
-  }
-
-  if (sort === 'price_asc') {
-    query += ` ORDER BY i.price ASC`;
-  } else if (sort === 'price_desc') {
-    query += ` ORDER BY i.price DESC`;
-  } else if (sort === 'newest') {
-    query += ` ORDER BY i.created_at DESC`;
+  if (userId) {
+    conditions.push('i.user_id = ?');
+    params.push(userId);
+    if (status) {
+      conditions.push('i.status = ?');
+      params.push(status);
+    }
   } else {
-    query += ` ORDER BY i.created_at DESC`;
+    conditions.push("i.status = 'published'");
   }
 
-  const offset = (page - 1) * limit;
-  query += ` LIMIT ? OFFSET ?`;
-  params.push(limit, offset);
+  if (category) { conditions.push('c.slug = ?');        params.push(category); }
+  if (brand)    { conditions.push('b.slug = ?');        params.push(brand); }
+  if (minPrice) { conditions.push('i.price >= ?');      params.push(minPrice); }
+  if (maxPrice) { conditions.push('i.price <= ?');      params.push(maxPrice); }
+  if (condition){ conditions.push('i.item_condition = ?'); params.push(condition); }
+  if (search)   { conditions.push('i.title LIKE ?');    params.push(`%${search}%`); }
 
-  const [rows] = await pool.query(query, params);
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const [rows] = await pool.query(
+    `SELECT i.id, i.title, i.model, i.price, i.item_condition, i.status, i.created_at,
+            c.id AS category_id, c.name AS category_name,
+            b.id AS brand_id, b.name AS brand_name,
+            u.id AS user_id, u.username,
+            (SELECT url FROM item_photos WHERE item_id = i.id ORDER BY sort_order LIMIT 1) AS cover_photo
+     FROM items i
+     JOIN categories c ON c.id = i.category_id
+     LEFT JOIN brands b ON b.id = i.brand_id
+     JOIN users u ON u.id = i.user_id
+     ${where}
+     ORDER BY i.created_at DESC`,
+    params
+  );
   return rows;
-}
-
-async function countAll(filters = {}) {
-  const { search, category, priceMin, priceMax } = filters;
-  
-  let query = `SELECT COUNT(*) AS count FROM items WHERE status = 'published'`;
-  const params = [];
-
-  if (search) {
-    query += ` AND (title LIKE ? OR description LIKE ?)`;
-    const searchTerm = `%${search}%`;
-    params.push(searchTerm, searchTerm);
-  }
-
-  if (category) {
-    query += ` AND category_id = ?`;
-    params.push(category);
-  }
-
-  if (priceMin) {
-    query += ` AND price >= ?`;
-    params.push(priceMin);
-  }
-
-  if (priceMax) {
-    query += ` AND price <= ?`;
-    params.push(priceMax);
-  }
-
-  const [rows] = await pool.query(query, params);
-  return rows[0].count;
 }
 
 async function findById(id) {
   const [rows] = await pool.query(
-    `SELECT i.*, c.nombre_categoria, b.nombre_marca
+    `SELECT i.id, i.title, i.model, i.description, i.specs, i.price, i.item_condition, i.status, i.created_at, i.updated_at,
+            i.category_id, c.name AS category_name,
+            i.brand_id, b.name AS brand_name,
+            i.user_id, u.username, u.avatar_url
      FROM items i
-     LEFT JOIN category c ON i.category_id = c.id_categoria
-     LEFT JOIN brand b ON i.brand_id = b.id_marca
-     WHERE i.id = ? LIMIT 1`,
+     JOIN categories c ON c.id = i.category_id
+     LEFT JOIN brands b ON b.id = i.brand_id
+     JOIN users u ON u.id = i.user_id
+     WHERE i.id = ?`,
     [id]
   );
-  return rows[0] || null;
+  if (!rows[0]) return null;
+
+  const [photos] = await pool.query(
+    'SELECT id, url, sort_order FROM item_photos WHERE item_id = ? ORDER BY sort_order',
+    [id]
+  );
+
+  return { ...rows[0], photos };
 }
 
-async function create({ userId, categoryId, brandId, title, model, description, specs, price, itemCondition }) {
+async function create({ user_id, category_id, brand_id, title, model, description, specs, price, item_condition, status }) {
   const [result] = await pool.query(
     `INSERT INTO items (user_id, category_id, brand_id, title, model, description, specs, price, item_condition, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
-    [userId, categoryId, brandId, title, model, description, JSON.stringify(specs), price, itemCondition]
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [user_id, category_id, brand_id || null, title, model || null, description || null,
+     specs ? JSON.stringify(specs) : null, price, item_condition, status || 'draft']
   );
   return result.insertId;
 }
 
-async function update(id, { title, model, description, specs, price, itemCondition, status }) {
+async function update(id, { category_id, brand_id, title, model, description, specs, price, item_condition, status }) {
   const [result] = await pool.query(
-    `UPDATE items 
-     SET title = ?, model = ?, description = ?, specs = ?, price = ?, item_condition = ?, status = ?
+    `UPDATE items
+     SET category_id = ?, brand_id = ?, title = ?, model = ?, description = ?, specs = ?,
+         price = ?, item_condition = ?, status = ?
      WHERE id = ?`,
-    [title, model, description, JSON.stringify(specs), price, itemCondition, status, id]
+    [category_id, brand_id || null, title, model || null, description || null,
+     specs ? JSON.stringify(specs) : null, price, item_condition, status, id]
   );
-  return result.affectedRows > 0;
+  return result.affectedRows;
+}
+
+async function updateStatus(id, status) {
+  const [result] = await pool.query(
+    'UPDATE items SET status = ? WHERE id = ?',
+    [status, id]
+  );
+  return result.affectedRows;
 }
 
 async function remove(id) {
   const [result] = await pool.query('DELETE FROM items WHERE id = ?', [id]);
-  return result.affectedRows > 0;
+  return result.affectedRows;
 }
 
-async function findByIdAndUser(id, userId) {
-  const [rows] = await pool.query(
-    'SELECT id FROM items WHERE id = ? AND user_id = ? LIMIT 1',
-    [id, userId]
-  );
-  return rows[0] || null;
+async function categoryExists(id) {
+  const [rows] = await pool.query('SELECT id FROM categories WHERE id = ?', [id]);
+  return rows.length > 0;
 }
 
-module.exports = {
-  findAll,
-  countAll,
-  findById,
-  create,
-  update,
-  remove,
-  findByIdAndUser,
-};
+async function brandExists(id) {
+  const [rows] = await pool.query('SELECT id FROM brands WHERE id = ?', [id]);
+  return rows.length > 0;
+}
+
+module.exports = { findAll, findById, create, update, updateStatus, remove, categoryExists, brandExists };
