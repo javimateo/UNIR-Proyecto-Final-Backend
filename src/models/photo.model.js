@@ -7,16 +7,16 @@ const Photo = {
         return rows[0] || null;
     },
 
-    // Buscar todas las fotos que pertenecen a un artículo concreto de la Fase 2
+    // Buscar todas las fotos que pertenecen a un artículo
     findByItemId: async (itemId) => {
         const [rows] = await db.query("SELECT * FROM item_photos WHERE item_id = ?", [itemId]);
         return rows;
     },
 
-    // Insertar el registro de la nueva imagen procesada por Multer
+    // ✨ CORREGIDO: Ahora usa la columna 'url' en lugar de 'photo_url'
     create: async (itemId, photoUrl) => {
         const [result] = await db.query(
-            "INSERT INTO item_photos (item_id, photo_url) VALUES (?, ?)",
+            "INSERT INTO item_photos (item_id, url) VALUES (?, ?)",
             [itemId, photoUrl]
         );
         return result.insertId;

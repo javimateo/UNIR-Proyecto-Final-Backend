@@ -3,14 +3,15 @@ const router = express.Router();
 
 const photosController = require('../controllers/photos.controller');
 const upload = require('../middlewares/upload.middleware');
+// 📝 CORRECCIÓN PUNTO 2: Importamos el middleware de autenticación real del proyecto
+const verifyToken = require('../middlewares/auth.middleware');
 
-// Endpoints modulares para la gestión de archivos multimedia
-// Nota: Se omite temporalmente el middleware de autenticación para facilitar las pruebas locales
+// Endpoints modulares protegidos para la gestión de archivos multimedia
 
-// POST /api/items/:id/photos -> Recibe un archivo binario en el campo 'image'
-router.post('/:id/photos', upload.single('image'), photosController.uploadPhoto);
+// POST /api/items/:id/photos -> 🛡️ Protegido con token
+router.post('/:id/photos', verifyToken, upload.single('image'), photosController.uploadPhoto);
 
-// DELETE /api/items/:id/photos/:photoId -> Elimina una imagen del servidor
-router.delete('/:id/photos/:photoId', photosController.deletePhoto);
+// DELETE /api/items/:id/photos/:photoId -> 🛡️ Protegido con token
+router.delete('/:id/photos/:photoId', verifyToken, photosController.deletePhoto);
 
 module.exports = router;
