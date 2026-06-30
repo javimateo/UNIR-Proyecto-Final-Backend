@@ -5,6 +5,7 @@ const path = require('path');
 // Importaciones del núcleo
 const itemsRoutes = require('./routes/items.routes');
 const photosRoutes = require('./routes/photos.routes');
+const messagesRoutes = require('./routes/messages.routes');
 const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
@@ -19,6 +20,7 @@ app.use('/uploads-imagen', express.static(path.join(__dirname, '../uploads-image
 // Asociación de endpoints modulares
 app.use('/api/items', itemsRoutes);
 app.use('/api/items', photosRoutes);
+app.use('/api/messages', messagesRoutes);
 
 // Manejador global de errores (Debe ser obligatoriamente el último app.use)
 app.use(errorMiddleware);
