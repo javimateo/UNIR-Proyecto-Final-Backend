@@ -23,7 +23,7 @@ app.use('/api/favorites',  require('./routes/favorites.routes'));
 app.use('/api/messages',   require('./routes/messages.routes'));
 // app.use('/api/brands',        require('./routes/brands.routes'));
 // app.use('/api/conversations', require('./routes/conversations.routes'));
-// app.use('/api/reports',       require('./routes/reports.routes'));
+app.use('/api/reports',       require('./routes/reports.routes'));
 // app.use('/api/valuations',    require('./routes/valuations.routes'));
 
 app.use(errorMiddleware);
