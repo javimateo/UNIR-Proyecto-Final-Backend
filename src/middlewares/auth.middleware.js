@@ -1,8 +1,18 @@
-// Middleware temporal para que el servidor arranque sin depender del login de tus compañeros
-const verifyToken = (req, res, next) => {
-    // Simulamos que el usuario ya se ha logueado correctamente y su ID es el 1
-    req.user = { id: 1 }; 
-    next(); // Continuar al controlador sin trabas
-};
+const jwt = require('jsonwebtoken');
 
-module.exports = verifyToken;
+function requireAuth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token no proporcionado' });
+  }
+
+  const token = header.split(' ')[1];
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token inválido o expirado' });
+  }
+}
+
+module.exports = requireAuth;

@@ -1,28 +1,31 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
-// Importaciones del núcleo
-const itemsRoutes = require('./routes/items.routes');
-const photosRoutes = require('./routes/photos.routes');
-const messagesRoutes = require('./routes/messages.routes');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
 
-// Middlewares globales básicos
 app.use(cors());
 app.use(express.json());
 
-// Servir la carpeta física de imágenes de manera estática
 app.use('/uploads-imagen', express.static(path.join(__dirname, '../uploads-imagen')));
 
-// Asociación de endpoints modulares
-app.use('/api/items', itemsRoutes);
-app.use('/api/items', photosRoutes);
-app.use('/api/messages', messagesRoutes);
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Manejador global de errores (Debe ser obligatoriamente el último app.use)
+app.use('/api/auth',       require('./routes/auth.routes'));
+app.use('/api/items',      require('./routes/items.routes'));
+app.use('/api/items',      require('./routes/photos.routes'));
+app.use('/api/users',      require('./routes/users.routes'));
+app.use('/api/categories', require('./routes/categories.routes'));
+app.use('/api/favorites',  require('./routes/favorites.routes'));
+app.use('/api/messages',   require('./routes/messages.routes'));
+// app.use('/api/brands',        require('./routes/brands.routes'));
+// app.use('/api/conversations', require('./routes/conversations.routes'));
+// app.use('/api/reports',       require('./routes/reports.routes'));
+// app.use('/api/valuations',    require('./routes/valuations.routes'));
+
 app.use(errorMiddleware);
 
 module.exports = app;

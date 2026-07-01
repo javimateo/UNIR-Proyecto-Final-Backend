@@ -1,17 +1,24 @@
 {
-  "name": "tv-marketplace-backend",
+  "name": "secondhand-platform-backend",
   "version": "1.0.0",
-  "description": "Backend modular para gestión de imágenes y mensajería de TVs",
+  "description": "API REST — Plataforma de compraventa de tecnología de segunda mano (UNIR TFM)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^4.22.2",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.22.5",
-    "uuid": "^10.0.0"
+    "mysql2": "^3.9.7",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
