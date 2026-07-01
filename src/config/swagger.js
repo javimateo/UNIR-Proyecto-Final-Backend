@@ -8,7 +8,9 @@ const options = {
       version: '1.0.0',
       description: 'API REST para la plataforma de compraventa de tecnología de segunda mano (UNIR TFM)',
     },
-    servers: [{ url: 'http://localhost:3000' }],
+    servers: [
+      { url: process.env.API_URL || 'http://localhost:3000', description: 'Servidor activo' },
+    ],
     components: {
       securitySchemes: {
         bearerAuth: {
