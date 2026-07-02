@@ -1,99 +1,52 @@
-// Importamos el modelo que acabamos de rellenar para poder usar sus funciones
 const Message = require('../models/message.model');
 const ItemModel = require('../models/item.model');
 
-// ✉️ 1. Controlador para enviar un mensaje nuevo o responder en un chat
-const sendMessage = async (req, res, next) => {
-    try {
-        const { item_id, receiver_id, message_text } = req.body;
-        
-        // El ID del emisor (tú) lo sacamos del token JWT de forma segura
-        const senderId = req.user.id; 
+async function sendMessage(req, res, next) {
+  const { item_id, receiver_id, message_text } = req.body;
+  const senderId = req.user.id;
 
-        // Validación básica
-        if (!item_id || !receiver_id || !message_text || message_text.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: 'Por favor, rellena todos los campos obligatorios. El mensaje no puede estar vacío.'
-            });
-        }
+  if (!item_id || !receiver_id || !message_text?.trim()) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios o el mensaje está vacío' });
+  }
 
-        const item = await ItemModel.findById(item_id);
-        if (!item) {
-            return res.status(404).json({ success: false, message: 'El artículo asociado no existe.' });
-        }
+  const item = await ItemModel.findById(item_id);
+  if (!item) return res.status(404).json({ error: 'Artículo no encontrado' });
 
-        const itemOwnerId = item.user_id;
-        let buyerId, sellerId;
+  const isOwner = senderId === item.user_id;
+  const buyerId  = isOwner ? receiver_id : senderId;
+  const sellerId = isOwner ? senderId    : item.user_id;
 
-        if (senderId === itemOwnerId) {
-            // Si el que escribe es el dueño del producto, él es el vendedor y el otro es el comprador
-            sellerId = senderId;
-            buyerId = receiver_id;
-        } else {
-            // Si el que escribe no es el dueño, él es el comprador y el dueño es el vendedor
-            buyerId = senderId;
-            sellerId = itemOwnerId;
-        }
+  const conversationId = await Message.getOrCreateConversation(item_id, buyerId, sellerId);
+  const messageId = await Message.create(conversationId, senderId, message_text.trim());
 
-        // 🔄 Obtener o crear el ID de la conversación única
-        const conversationId = await Message.getOrCreateConversation(item_id, buyerId, sellerId);
+  res.status(201).json({
+    id: messageId,
+    conversation_id: conversationId,
+    sender_id: senderId,
+    content: message_text.trim(),
+  });
+}
 
-        // 🚀 Llamamos al modelo para insertar el mensaje en la tabla real (Punto 1)
-        const messageId = await Message.create(conversationId, senderId, message_text);
+async function getConversations(req, res, next) {
+  const conversations = await Message.getConversations(req.user.id);
+  res.json(conversations);
+}
 
-        // Respondemos a Angular
-        res.status(201).json({
-            success: true,
-            message: 'Mensaje enviado correctamente y asociado a la conversación.',
-            data: {
-                id: messageId,
-                conversation_id: conversationId,
-                sender_id: senderId,
-                content: message_text
-            }
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+async function getInbox(req, res, next) {
+  const inbox = await Message.getInbox(req.user.id);
+  res.json({ count: inbox.length, messages: inbox });
+}
 
-// 📥 2. Controlador para listar los mensajes que ha recibido el usuario logueado
-const getInbox = async (req, res, next) => {
-    try {
-        const userId = req.user.id; 
-        const inbox = await Message.getInbox(userId);
+async function getChatHistory(req, res, next) {
+  const { itemId, userId } = req.params;
+  const messages = await Message.getChat(itemId, req.user.id, userId);
+  res.json(messages);
+}
 
-        res.json({
-            success: true,
-            count: inbox.length,
-            messages: inbox
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+async function markAsRead(req, res, next) {
+  const updated = await Message.markAsRead(req.params.id, req.user.id);
+  if (!updated) return res.status(404).json({ error: 'Mensaje no encontrado o no tienes permiso' });
+  res.json({ ok: true });
+}
 
-// 💬 3. Controlador para ver el historial completo de chat entre dos personas por un artículo
-const getChatHistory = async (req, res, next) => {
-    try {
-        const itemId = req.params.itemId;       
-        const alternativeUserId = req.params.userId; 
-        const currentUserId = req.user.id;      
-
-        const chat = await Message.getChat(itemId, currentUserId, alternativeUserId);
-
-        res.json({
-            success: true,
-            messages: chat
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-module.exports = {
-    sendMessage,
-    getInbox,
-    getChatHistory
-};
+module.exports = { sendMessage, getConversations, getInbox, getChatHistory, markAsRead };
