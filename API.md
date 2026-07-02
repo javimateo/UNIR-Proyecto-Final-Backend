@@ -579,6 +579,42 @@ Resolver un reporte.
 
 ---
 
+## Estadísticas
+
+### `GET /api/admin/stats` 🔒 `admin`
+Estadísticas globales de la plataforma para el panel de administración.
+
+**Respuesta 200:**
+```json
+{
+  "users": {
+    "active": 42,
+    "blocked": 3,
+    "deleted": 1,
+    "total": 46
+  },
+  "items": {
+    "published": 120,
+    "draft": 15,
+    "under_review": 4,
+    "sold": 30,
+    "removed": 2,
+    "total": 171
+  },
+  "reports": {
+    "pending": 4,
+    "resolved_active": 10,
+    "resolved_removed": 2,
+    "total": 16
+  },
+  "recent": {
+    "published_last_30d": 25
+  }
+}
+```
+
+---
+
 ## Códigos de respuesta comunes
 
 | Código | Significado |
