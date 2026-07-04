@@ -68,26 +68,27 @@ async function findAll({ category_id, brand_id, min_price, max_price, item_condi
 }
 
 async function findById(id) {
-  const [rows] = await pool.query(
-    `SELECT i.id, i.title, i.model, i.description, i.specs, i.price, i.item_condition, i.status, i.created_at, i.updated_at,
-            i.category_id, c.name AS category_name,
-            i.brand_id, b.name AS brand_name,
-            i.user_id, u.username, u.avatar_url
-     FROM items i
-     JOIN categories c ON c.id = i.category_id
-     LEFT JOIN brands b ON b.id = i.brand_id
-     JOIN users u ON u.id = i.user_id
-     WHERE i.id = ?`,
-    [id]
-  );
-  if (!rows[0]) return null;
+    const [rows] = await pool.query(`
+        SELECT i.id, i.title, i.model, i.description, i.specs, i.price, i.item_condition, i.status, i.created_at, i.updated_at,
+               i.category_id, c.name AS category_name,
+               i.brand_id, b.name AS brand_name,
+               i.user_id, u.username, u.avatar_url
+        FROM items i
+        LEFT JOIN categories c ON c.id = i.category_id
+        LEFT JOIN brands b ON b.id = i.brand_id
+        JOIN users u ON u.id = i.user_id
+        WHERE i.id = ?`, 
+        [id]
+    );
 
-  const [photos] = await pool.query(
-    'SELECT id, url, sort_order FROM item_photos WHERE item_id = ? ORDER BY sort_order',
-    [id]
-  );
+    if (!rows[0]) return null;
 
-  return { ...rows[0], photos };
+    const [photos] = await pool.query(
+        'SELECT id, url, sort_order FROM item_photos WHERE item_id = ? ORDER BY sort_order',
+        [id]
+    );
+
+    return { ...rows[0], photos };
 }
 
 async function create({ user_id, category_id, brand_id, title, model, description, specs, price, item_condition, status }) {
