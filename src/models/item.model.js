@@ -1,44 +1,70 @@
 const pool = require('../config/db');
 
-async function findAll({ category, brand, minPrice, maxPrice, condition, status, search, userId } = {}) {
-  const conditions = [];
-  const params = [];
+async function findAll({ category_id, brand_id, min_price, max_price, item_condition, status, search, userId, page = 1, per_page = 6 } = {}) {
+    const conditions = [];
+    const params = [];
 
-  if (userId) {
-    conditions.push('i.user_id = ?');
-    params.push(userId);
-    if (status) {
-      conditions.push('i.status = ?');
-      params.push(status);
+    if (userId) {
+        conditions.push('i.user_id = ?');
+        params.push(userId);
+        if (status) {
+            conditions.push('i.status = ?');
+            params.push(status);
+        }
+    } else {
+        conditions.push("i.status = 'published'");
     }
-  } else {
-    conditions.push("i.status = 'published'");
-  }
 
-  if (category) { conditions.push('c.slug = ?');        params.push(category); }
-  if (brand)    { conditions.push('b.slug = ?');        params.push(brand); }
-  if (minPrice) { conditions.push('i.price >= ?');      params.push(minPrice); }
-  if (maxPrice) { conditions.push('i.price <= ?');      params.push(maxPrice); }
-  if (condition){ conditions.push('i.item_condition = ?'); params.push(condition); }
-  if (search)   { conditions.push('i.title LIKE ?');    params.push(`%${search}%`); }
+    // Filtros con los nombres que manda Angular
+    if (category_id) { conditions.push('c.id = ?'); params.push(category_id); }
+    if (brand_id)    { conditions.push('b.id = ?'); params.push(brand_id); }
+    if (min_price)   { conditions.push('i.price >= ?'); params.push(min_price); }
+    if (max_price)   { conditions.push('i.price <= ?'); params.push(max_price); }
+    if (item_condition) { conditions.push('i.item_condition = ?'); params.push(item_condition); }
+    if (search)      { conditions.push('i.title LIKE ?'); params.push(`%${search}%`); }
 
-  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    let where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-  const [rows] = await pool.query(
-    `SELECT i.id, i.title, i.model, i.price, i.item_condition, i.status, i.created_at,
-            c.id AS category_id, c.name AS category_name,
-            b.id AS brand_id, b.name AS brand_name,
-            u.id AS user_id, u.username,
-            (SELECT url FROM item_photos WHERE item_id = i.id ORDER BY sort_order LIMIT 1) AS cover_photo
-     FROM items i
-     JOIN categories c ON c.id = i.category_id
-     LEFT JOIN brands b ON b.id = i.brand_id
-     JOIN users u ON u.id = i.user_id
-     ${where}
-     ORDER BY i.created_at DESC`,
-    params
-  );
-  return rows;
+    // --- 1. Calcular el TOTAL de resultados para la paginación ---
+    const [countResult] = await pool.query(`
+        SELECT COUNT(*) as total 
+        FROM items i 
+        LEFT JOIN categories c ON c.id = i.category_id
+        LEFT JOIN brands b ON b.id = i.brand_id
+        LEFT JOIN users u ON u.id = i.user_id
+        ${where}
+    `, params);
+    
+    const total = countResult[0].total;
+
+    // --- 2. Preparar el LIMIT y OFFSET ---
+    const limit = Number(per_page);
+    const offset = (Number(page) - 1) * limit;
+    const queryParams = [...params, limit, offset];
+
+    // --- 3. Consulta principal con paginación ---
+    // NOTA: Cambiamos los JOIN por LEFT JOIN para que no se pierdan productos
+    const [rows] = await pool.query(`
+        SELECT i.id, i.title, i.model, i.price, i.item_condition, i.status, i.created_at,
+               c.id AS category_id, c.name AS category_name,
+               b.id AS brand_id, b.name AS brand_name,
+               u.id AS user_id, u.username,
+               (SELECT url FROM item_photos WHERE item_id = i.id ORDER BY sort_order LIMIT 1) AS cover_photo
+        FROM items i
+        LEFT JOIN categories c ON c.id = i.category_id
+        LEFT JOIN brands b ON b.id = i.brand_id
+        LEFT JOIN users u ON u.id = i.user_id
+        ${where}
+        ORDER BY i.created_at DESC
+        LIMIT ? OFFSET ?
+    `, queryParams);
+
+    return {
+        results: rows,
+        total: total,
+        page: Number(page),
+        per_page: limit
+    };
 }
 
 async function findById(id) {
