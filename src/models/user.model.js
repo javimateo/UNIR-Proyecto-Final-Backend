@@ -32,4 +32,45 @@ async function create({ username, email, password_hash }) {
   return result.insertId;
 }
 
-module.exports = { findByUsername, findByEmail, findById, create };
+async function findAll({ search, role, status } = {}) {
+  const conditions = [];
+  const params = [];
+
+  if (search)  { conditions.push('(username LIKE ? OR email LIKE ?)'); params.push(`%${search}%`, `%${search}%`); }
+  if (role)    { conditions.push('role = ?');   params.push(role); }
+  if (status)  { conditions.push('status = ?'); params.push(status); }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const [rows] = await pool.query(
+    `SELECT id, username, email, role, status, avatar_url, created_at FROM users ${where} ORDER BY created_at DESC`,
+    params
+  );
+  return rows;
+}
+
+async function update(id, { username, email, avatar_url }) {
+  const [result] = await pool.query(
+    'UPDATE users SET username = ?, email = ?, avatar_url = ? WHERE id = ?',
+    [username, email, avatar_url || null, id]
+  );
+  return result.affectedRows > 0;
+}
+
+async function updateRole(id, role) {
+  const [result] = await pool.query(
+    'UPDATE users SET role = ? WHERE id = ?',
+    [role, id]
+  );
+  return result.affectedRows > 0;
+}
+
+async function updateStatus(id, status) {
+  const [result] = await pool.query(
+    'UPDATE users SET status = ? WHERE id = ?',
+    [status, id]
+  );
+  return result.affectedRows > 0;
+}
+
+module.exports = { findByUsername, findByEmail, findById, findAll, create, update, updateRole, updateStatus };

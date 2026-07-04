@@ -150,4 +150,3 @@ git add .
 git commit -m "chore: merge develop into feature/mi-rama"
 git push
 ```
-prueba de git

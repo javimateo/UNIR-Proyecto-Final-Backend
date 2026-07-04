@@ -237,7 +237,7 @@ backend/
 |------|--------|
 | 0 — Proyecto base | ✔ Completado |
 | 1 — Autenticación | ✔ Completado |
-| 2 — Artículos | ⬜ Pendiente |
+| 2 — Artículos | ✔ Completado |
 | 3 — Fotos | ⬜ Pendiente |
 | 4 — Categorías y marcas | ⬜ Pendiente |
 | 5 — Mensajería | ⬜ Pendiente |

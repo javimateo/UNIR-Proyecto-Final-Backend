@@ -1,113 +1,111 @@
 const ItemModel = require('../models/item.model');
 
-async function list(req, res) {
-  const { search, category, priceMin, priceMax, sort, page = 1, limit = 10 } = req.query;
-
-  const filters = {
-    search,
-    category: category ? parseInt(category) : null,
-    priceMin: priceMin ? parseFloat(priceMin) : null,
-    priceMax: priceMax ? parseFloat(priceMax) : null,
-    sort,
-    page: parseInt(page),
-    limit: parseInt(limit),
-  };
-
-  const items = await ItemModel.findAll(filters);
-  const total = await ItemModel.countAll(filters);
-  const totalPages = Math.ceil(total / parseInt(limit));
-
-  res.json({
-    data: items,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      totalPages,
-    },
-  });
+// Público: todos los artículos publicados con filtros opcionales por query string
+async function getItems(req, res, next) {
+  const { category, brand, minPrice, maxPrice, condition, status, search } = req.query;
+  const items = await ItemModel.findAll({ category, brand, minPrice, maxPrice, condition, status, search });
+  res.json(items);
 }
 
-async function getById(req, res) {
-  const { id } = req.params;
-
-  const item = await ItemModel.findById(id);
-  if (!item) {
-    return res.status(404).json({ error: 'Artículo no encontrado' });
-  }
-
+// Público: detalle completo de un artículo incluyendo sus fotos
+async function getItem(req, res, next) {
+  const item = await ItemModel.findById(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Artículo no encontrado' });
   res.json(item);
 }
 
-async function create(req, res) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Autenticación requerida' });
+// Público: todos los artículos de un usuario concreto
+async function getUserItems(req, res, next) {
+  const items = await ItemModel.findAll({ userId: req.params.id });
+  res.json(items);
+}
+
+async function createItem(req, res, next) {
+  const { category_id, brand_id, title, model, description, specs, price, item_condition, status } = req.body;
+
+  if (!category_id || !title || !price || !item_condition) {
+    return res.status(400).json({ error: 'category_id, title, price e item_condition son obligatorios' });
   }
 
-  const { category_id, brand_id, title, model, description, specs, price, item_condition } = req.body;
+  // Verificar que las FK existen antes de insertar para evitar errores de BD poco descriptivos
+  const categoryOk = await ItemModel.categoryExists(category_id);
+  if (!categoryOk) return res.status(400).json({ error: 'La categoría indicada no existe' });
 
-  if (!title || !price || !category_id || !item_condition) {
-    return res.status(400).json({ error: 'Campos obligatorios: title, price, category_id, item_condition' });
+  if (brand_id) {
+    const brandOk = await ItemModel.brandExists(brand_id);
+    if (!brandOk) return res.status(400).json({ error: 'La marca indicada no existe' });
   }
 
-  const itemId = await ItemModel.create({
-    userId,
-    categoryId: category_id,
-    brandId: brand_id,
-    title,
-    model,
-    description,
-    specs: specs || {},
-    price,
-    itemCondition: item_condition,
+  const id = await ItemModel.create({
+    user_id: req.user.id, // propietario = usuario autenticado
+    category_id, brand_id, title, model, description, specs, price, item_condition, status,
   });
 
-  res.status(201).json({ id: itemId, title, price });
+  res.status(201).json({ id });
 }
 
-async function update(req, res) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Autenticación requerida' });
+async function updateItem(req, res, next) {
+  const item = await ItemModel.findById(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Artículo no encontrado' });
+
+  // Solo el propietario o un admin pueden editar
+  if (item.user_id !== req.user.id && req.user.role !== 'admin') {
+    const err = new Error('No tienes permiso para editar este artículo');
+    err.status = 403;
+    return next(err);
   }
 
-  const { id } = req.params;
-  const { title, model, description, specs, price, item_condition, status } = req.body;
+  const { category_id, brand_id, title, model, description, specs, price, item_condition, status } = req.body;
 
-  const item = await ItemModel.findByIdAndUser(id, userId);
-  if (!item) {
-    return res.status(403).json({ error: 'No tienes permiso o el artículo no existe' });
+  if (!category_id || !title || !price || !item_condition) {
+    return res.status(400).json({ error: 'category_id, title, price e item_condition son obligatorios' });
   }
 
-  await ItemModel.update(id, {
-    title,
-    model,
-    description,
-    specs: specs || {},
-    price,
-    itemCondition: item_condition,
-    status: status || 'draft',
-  });
+  const categoryOk = await ItemModel.categoryExists(category_id);
+  if (!categoryOk) return res.status(400).json({ error: 'La categoría indicada no existe' });
 
-  res.json({ id: Number(id), title, price });
+  if (brand_id) {
+    const brandOk = await ItemModel.brandExists(brand_id);
+    if (!brandOk) return res.status(400).json({ error: 'La marca indicada no existe' });
+  }
+
+  await ItemModel.update(req.params.id, { category_id, brand_id, title, model, description, specs, price, item_condition, status });
+  res.json({ message: 'Artículo actualizado correctamente' });
 }
 
-async function remove(req, res) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Autenticación requerida' });
+async function deleteItem(req, res, next) {
+  const item = await ItemModel.findById(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Artículo no encontrado' });
+
+  // Solo el propietario o un admin pueden eliminar
+  if (item.user_id !== req.user.id && req.user.role !== 'admin') {
+    const err = new Error('No tienes permiso para eliminar este artículo');
+    err.status = 403;
+    return next(err);
   }
 
-  const { id } = req.params;
-
-  const item = await ItemModel.findByIdAndUser(id, userId);
-  if (!item) {
-    return res.status(403).json({ error: 'No tienes permiso o el artículo no existe' });
-  }
-
-  await ItemModel.remove(id);
-  res.status(204).send();
+  await ItemModel.remove(req.params.id);
+  res.json({ message: 'Artículo eliminado correctamente' });
 }
 
-module.exports = { list, getById, create, update, remove };
+async function sellItem(req, res, next) {
+  const item = await ItemModel.findById(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Artículo no encontrado' });
+
+  // Solo el propietario puede marcar su artículo como vendido (ni siquiera el admin)
+  if (item.user_id !== req.user.id) {
+    const err = new Error('No tienes permiso para realizar esta acción');
+    err.status = 403;
+    return next(err);
+  }
+
+  // Solo tiene sentido marcar como vendido si está publicado
+  if (item.status !== 'published') {
+    return res.status(400).json({ error: 'Solo se pueden marcar como vendidos los artículos publicados' });
+  }
+
+  await ItemModel.updateStatus(req.params.id, 'sold');
+  res.json({ message: 'Artículo marcado como vendido' });
+}
+
+module.exports = { getItems, getItem, getUserItems, createItem, updateItem, deleteItem, sellItem };

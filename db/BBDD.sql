@@ -1,15 +1,15 @@
 -- ============================================================
---  Plataforma de compraventa de televisores de segunda mano
---  Schema MySQL — versión corregida
+--  Plataforma de compraventa de tecnología de segunda mano
+--  Schema MySQL
 -- ============================================================
 
-DROP DATABASE IF EXISTS proyecto_final_unir;
+DROP DATABASE IF EXISTS Proyecto_Final_UNIR;
 
-CREATE DATABASE proyecto_final_unir
+CREATE DATABASE Proyecto_Final_UNIR
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE proyecto_final_unir;
+USE Proyecto_Final_UNIR;
 
 -- ------------------------------------------------------------
 -- BRANDS
@@ -23,13 +23,15 @@ CREATE TABLE brands (
 );
 
 -- ------------------------------------------------------------
--- CATEGORIES
+-- CATEGORIES (jerárquicas: parent_id NULL = categoría raíz)
 -- ------------------------------------------------------------
 CREATE TABLE categories (
-  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name       VARCHAR(100) NOT NULL UNIQUE,
-  slug       VARCHAR(100) NOT NULL UNIQUE,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  parent_id INT UNSIGNED NULL,
+  name      VARCHAR(100) NOT NULL,
+  slug      VARCHAR(100) NOT NULL UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 -- ------------------------------------------------------------
@@ -57,7 +59,7 @@ CREATE TABLE items (
   title          VARCHAR(150) NOT NULL,
   model          VARCHAR(150),
   description    TEXT,
-  specs          JSON,
+  specs          JSON,                          -- ej: {"ram":"16GB","storage":"512GB SSD"}
   price          DECIMAL(10, 2) NOT NULL,
   item_condition ENUM('new', 'like_new', 'good', 'fair', 'poor') NOT NULL,
   status         ENUM('draft', 'published', 'under_review', 'removed', 'sold') NOT NULL DEFAULT 'draft',
@@ -75,7 +77,6 @@ CREATE TABLE item_photos (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   item_id    INT UNSIGNED NOT NULL,
   url        VARCHAR(500) NOT NULL,
-  is_main    BOOLEAN NOT NULL DEFAULT FALSE,
   sort_order TINYINT UNSIGNED DEFAULT 0,
   FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
 );
@@ -156,3 +157,80 @@ CREATE TABLE valuations (
   FOREIGN KEY (reviewed_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (item_id)     REFERENCES items(id) ON DELETE CASCADE
 );
+
+-- ============================================================
+--  Seed: marcas
+-- ============================================================
+INSERT INTO brands (name, slug) VALUES
+  ('Apple',        'apple'),
+  ('Samsung',      'samsung'),
+  ('ASUS',         'asus'),
+  ('MSI',          'msi'),
+  ('Lenovo',       'lenovo'),
+  ('HP',           'hp'),
+  ('Dell',         'dell'),
+  ('Intel',        'intel'),
+  ('AMD',          'amd'),
+  ('NVIDIA',       'nvidia'),
+  ('Corsair',      'corsair'),
+  ('Kingston',     'kingston'),
+  ('Seagate',      'seagate'),
+  ('Western Digital', 'western-digital'),
+  ('LG',           'lg'),
+  ('Sony',         'sony'),
+  ('Logitech',     'logitech'),
+  ('Razer',        'razer');
+
+-- ============================================================
+--  Seed: categorías jerárquicas
+-- ============================================================
+
+-- Raíz
+INSERT INTO categories (id, parent_id, name, slug) VALUES
+  (1,  NULL, 'Portátiles',            'portatiles'),
+  (2,  NULL, 'Sobremesa y componentes','sobremesa-componentes'),
+  (3,  NULL, 'Monitores',             'monitores'),
+  (4,  NULL, 'Almacenamiento',        'almacenamiento'),
+  (5,  NULL, 'Periféricos',           'perifericos'),
+  (6,  NULL, 'Smartphones y tablets', 'smartphones-tablets'),
+  (7,  NULL, 'Fotografía y vídeo',    'fotografia-video'),
+  (8,  NULL, 'Redes y conectividad',  'redes'),
+  (9,  NULL, 'Otros',                 'otros');
+
+-- Portátiles
+INSERT INTO categories (parent_id, name, slug) VALUES
+  (1, 'Portátiles gaming',      'portatiles-gaming'),
+  (1, 'Portátiles ultrabook',   'portatiles-ultrabook'),
+  (1, 'Portátiles workstation', 'portatiles-workstation');
+
+-- Sobremesa y componentes
+INSERT INTO categories (parent_id, name, slug) VALUES
+  (2, 'PCs completos',          'pcs-completos'),
+  (2, 'Procesadores',           'procesadores'),
+  (2, 'Tarjetas gráficas',      'tarjetas-graficas'),
+  (2, 'Placas base',            'placas-base'),
+  (2, 'Memorias RAM',           'memorias-ram'),
+  (2, 'Fuentes de alimentación','fuentes-alimentacion'),
+  (2, 'Cajas y torres',         'cajas-torres'),
+  (2, 'Refrigeración',          'refrigeracion');
+
+-- Almacenamiento
+INSERT INTO categories (parent_id, name, slug) VALUES
+  (4, 'SSD',                    'ssd'),
+  (4, 'HDD',                    'hdd'),
+  (4, 'Discos externos',        'discos-externos'),
+  (4, 'Memorias USB y tarjetas','usb-tarjetas');
+
+-- Periféricos
+INSERT INTO categories (parent_id, name, slug) VALUES
+  (5, 'Teclados',               'teclados'),
+  (5, 'Ratones',                'ratones'),
+  (5, 'Auriculares y sonido',   'auriculares'),
+  (5, 'Webcams',                'webcams'),
+  (5, 'Impresoras y escáneres', 'impresoras');
+
+-- Smartphones y tablets
+INSERT INTO categories (parent_id, name, slug) VALUES
+  (6, 'Smartphones',            'smartphones'),
+  (6, 'Tablets',                'tablets'),
+  (6, 'Accesorios móvil',       'accesorios-movil');

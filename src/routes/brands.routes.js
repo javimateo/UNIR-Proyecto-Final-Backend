@@ -1,33 +1,33 @@
 const router = require('express').Router();
-const categoriesController = require('../controllers/categories.controller');
+const brandsController = require('../controllers/brands.controller');
 const requireAuth = require('../middlewares/auth.middleware');
 const requireRole = require('../middlewares/role.middleware');
 
 /**
  * @swagger
  * tags:
- *   name: Categories
- *   description: Gestión de categorías
+ *   name: Brands
+ *   description: Gestión de marcas
  */
 
 /**
  * @swagger
- * /api/categories:
+ * /api/brands:
  *   get:
- *     summary: Listado de categorías
- *     tags: [Categories]
+ *     summary: Listado de marcas
+ *     tags: [Brands]
  *     responses:
  *       200:
- *         description: Lista de categorías
+ *         description: Lista de marcas
  */
-router.get('/', categoriesController.list);
+router.get('/', brandsController.list);
 
 /**
  * @swagger
- * /api/categories:
+ * /api/brands:
  *   post:
- *     summary: Crear categoría (solo admin)
- *     tags: [Categories]
+ *     summary: Crear marca (solo admin)
+ *     tags: [Brands]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -39,18 +39,19 @@ router.get('/', categoriesController.list);
  *             required: [name]
  *             properties:
  *               name: { type: string }
+ *               logo_url: { type: string }
  *     responses:
  *       201:
- *         description: Categoría creada
+ *         description: Marca creada
  */
-router.post('/', requireAuth, requireRole('admin'), categoriesController.create);
+router.post('/', requireAuth, requireRole('admin'), brandsController.create);
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /api/brands/{id}:
  *   put:
- *     summary: Editar categoría (solo admin)
- *     tags: [Categories]
+ *     summary: Editar marca (solo admin)
+ *     tags: [Brands]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -67,20 +68,21 @@ router.post('/', requireAuth, requireRole('admin'), categoriesController.create)
  *             required: [name]
  *             properties:
  *               name: { type: string }
+ *               logo_url: { type: string }
  *     responses:
  *       200:
- *         description: Categoría actualizada
+ *         description: Marca actualizada
  *       404:
- *         description: Categoría no encontrada
+ *         description: Marca no encontrada
  */
-router.put('/:id', requireAuth, requireRole('admin'), categoriesController.update);
+router.put('/:id', requireAuth, requireRole('admin'), brandsController.update);
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /api/brands/{id}:
  *   delete:
- *     summary: Eliminar categoría (solo admin)
- *     tags: [Categories]
+ *     summary: Eliminar marca (solo admin)
+ *     tags: [Brands]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -90,12 +92,12 @@ router.put('/:id', requireAuth, requireRole('admin'), categoriesController.updat
  *         schema: { type: integer }
  *     responses:
  *       204:
- *         description: Categoría eliminada
+ *         description: Marca eliminada
  *       400:
- *         description: La categoría tiene artículos asociados
+ *         description: La marca tiene artículos asociados
  *       404:
- *         description: Categoría no encontrada
+ *         description: Marca no encontrada
  */
-router.delete('/:id', requireAuth, requireRole('admin'), categoriesController.remove);
+router.delete('/:id', requireAuth, requireRole('admin'), brandsController.remove);
 
 module.exports = router;
