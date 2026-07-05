@@ -16,7 +16,7 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/auth',       require('./routes/auth.routes'));
 app.use('/api/items',      require('./routes/items.routes'));
-app.use('/api/items',      require('./routes/photos.routes'));
+app.use('/api/photos',     require('./routes/photos.routes'));
 app.use('/api/users',      require('./routes/users.routes'));
 app.use('/api/categories', require('./routes/categories.routes'));
 app.use('/api/favorites',  require('./routes/favorites.routes'));
