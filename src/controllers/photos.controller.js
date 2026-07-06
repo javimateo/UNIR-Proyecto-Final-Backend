@@ -57,7 +57,7 @@ const uploadPhoto = async (req, res, next) => {
 
 const deletePhoto = async (req, res, next) => {
     try {
-        const { itemId, photoId } = req.params; // Capturamos ambos parámetros de la URL
+        const { id: itemId, photoId } = req.params;
 
         // 📝 CORRECCIÓN PUNTO 2: Validar autenticación
         if (!req.user || !req.user.id) {
@@ -74,9 +74,16 @@ const deletePhoto = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'La imagen solicitada no existe.' });
         }
 
-        // 📝 CORRECCIÓN PUNTO 3: Verificar que la foto pertenece a un artículo del usuario logueado
-        const [items] = await db.query("SELECT user_id FROM items WHERE id = ?", [photo.item_id]);
+        // 📝 CORRECCIÓN PUNTO 3: Verificar que la foto pertenece al artículo indicado y al usuario logueado
+        const [items] = await db.query("SELECT user_id FROM items WHERE id = ?", [itemId]);
         if (items.length === 0 || items[0].user_id !== userId) {
+            return res.status(403).json({ 
+                success: false,
+                message: 'Permiso denegado. No puedes borrar fotos de un artículo que no te pertenece.'
+            });
+        }
+
+        if (photo.item_id !== Number(itemId)) {
             return res.status(403).json({ 
                 success: false, 
                 message: 'Permiso denegado. No puedes borrar fotos de un artículo que no te pertenece.' 

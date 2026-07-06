@@ -2,8 +2,28 @@ const ItemModel = require('../models/item.model');
 
 // Público: todos los artículos publicados con filtros opcionales por query string
 async function getItems(req, res, next) {
-  const { category, brand, minPrice, maxPrice, condition, status, search } = req.query;
-  const items = await ItemModel.findAll({ category, brand, minPrice, maxPrice, condition, status, search });
+  const { category, brand, minPrice, maxPrice, condition, status, search, page, per_page } = req.query;
+
+  const parsedPage = Number.parseInt(page, 10);
+  const parsedPerPage = Number.parseInt(per_page, 10);
+
+  const safePage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const safePerPage = Number.isInteger(parsedPerPage) && parsedPerPage > 0
+    ? Math.min(parsedPerPage, 50)
+    : 6;
+
+  const items = await ItemModel.findAll({
+    category,
+    brand,
+    minPrice,
+    maxPrice,
+    condition,
+    status,
+    search,
+    page: safePage,
+    perPage: safePerPage,
+  });
+
   res.json(items);
 }
 
