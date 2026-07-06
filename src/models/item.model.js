@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-async function findAll({ category, brand, minPrice, maxPrice, condition, status, search, userId } = {}) {
+async function findAll({ category, brand, minPrice, maxPrice, condition, status, search, userId, page = 1, perPage = 6 } = {}) {
   const conditions = [];
   const params = [];
 
@@ -23,6 +23,7 @@ async function findAll({ category, brand, minPrice, maxPrice, condition, status,
   if (search)   { conditions.push('i.title LIKE ?');    params.push(`%${search}%`); }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const offset = (page - 1) * perPage;
 
   const [rows] = await pool.query(
     `SELECT i.id, i.title, i.model, i.price, i.item_condition, i.status, i.created_at,
@@ -35,8 +36,9 @@ async function findAll({ category, brand, minPrice, maxPrice, condition, status,
      LEFT JOIN brands b ON b.id = i.brand_id
      JOIN users u ON u.id = i.user_id
      ${where}
-     ORDER BY i.created_at DESC`,
-    params
+     ORDER BY i.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, perPage, offset]
   );
   return rows;
 }
